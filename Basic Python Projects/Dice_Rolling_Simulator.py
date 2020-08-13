@@ -1,6 +1,6 @@
 print("**********************************")
-print("WELCOME")
-print("THE DICE ROLLING SIMULATOR")
+print("             WELCOME")
+print("    THE DICE ROLLING SIMULATOR")
 print("**********************************")
 import random
 import sys
