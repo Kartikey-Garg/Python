@@ -1,0 +1,7 @@
+print("****************************")
+print("       E-mail Slicer")
+print("****************************")
+email = input("Enter your email: ")
+uname = email[:email.index("@")]
+dname = email[email.index("@")+1:]
+print("Your User Name is '"+uname+"' and Domain Name is '"+dname+"'")
