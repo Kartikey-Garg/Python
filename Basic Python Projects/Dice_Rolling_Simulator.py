@@ -7,8 +7,7 @@ import sys
 Yes = ['Y', 'y']
 No = ['N', 'n']
 def usr():
-    x = random.randint(1,6)
-    return x
+   return print(random.randint(1,6))
 while True:
     usr()
     n = input("Do you want to quit ? (Y/N)\n")
