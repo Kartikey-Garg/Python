@@ -4,17 +4,16 @@ print("    THE DICE ROLLING SIMULATOR")
 print("**********************************")
 import random
 import sys
-Yes = ['Y', 'y']
-No = ['N', 'n']
 def usr():
-   return print(random.randint(1,6))
+   return random.randint(1,6)
+print("Die Number:", usr())
 while True:
     usr()
     n = input("Do you want to quit ? (Y/N)\n")
-    if n in Yes:
+    if n in ['Y', 'y']:
         print("Bye!!")
         sys.exit()
-    elif n in No:
+    elif n in ['N', 'n']:
         print("Die Number:", usr())
     else:
         print("Invalid Input")
