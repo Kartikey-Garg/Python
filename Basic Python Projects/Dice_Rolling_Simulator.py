@@ -3,7 +3,6 @@ print("             WELCOME")
 print("    THE DICE ROLLING SIMULATOR")
 print("**********************************")
 import random
-import sys
 def usr():
    return random.randint(1,6)
 print("Die Number:", usr())
