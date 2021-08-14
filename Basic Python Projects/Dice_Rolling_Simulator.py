@@ -5,7 +5,7 @@ print("**********************************")
 import random
 def usr():
    return random.randint(1,6)
-print("Die Number:", usr())
+print("Dice Number:", usr())
 x=True
 while x:
     usr()
@@ -14,7 +14,7 @@ while x:
         print("Bye!!")
         x=False
     elif n in ['N', 'n']:
-        print("Die Number:", usr())
+        print("Dice Number:", usr())
     else:
         print("Invalid Input")
         x=False
