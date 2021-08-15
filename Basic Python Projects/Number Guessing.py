@@ -18,5 +18,5 @@ for i in range (2,-1,-1):
  else:
      print("Nope, you guessed it smaller")
      print("Number of chances left: ",i)
- if i==0 & x!=num:
-    print("The Secret Number is: ",num)
+if x!=num:
+   print("The Secret Number is: ",num)
