@@ -1,0 +1,131 @@
+import requests
+import pandas as pd
+import numpy as np
+from alpha_vantage.cryptocurrencies import CryptoCurrencies
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.linear_model import Ridge
+
+# Your Alpha Vantage API key
+api_key = 'Your_API_Key'
+
+def get_exchange_rate():
+    url = 'https://api.exchangerate-api.com/v4/latest/USD'
+    response = requests.get(url)
+    data = response.json()
+    return data['rates']['INR']
+
+try:
+    print("Fetching the latest USD to INR exchange rate...")
+    exchange_rate = get_exchange_rate()
+    print(f"Exchange rate fetched successfully: 1 USD = {exchange_rate} INR")
+
+    # Fetch Monthly Data
+    print("Fetching Bitcoin monthly data in USD...")
+    cc = CryptoCurrencies(key=api_key, output_format='pandas')
+    monthly_data, meta_data = cc.get_digital_currency_monthly(symbol='BTC', market='USD')
+    print("Monthly data fetched successfully.")
+
+    # Prepare Monthly Data
+    print("Preparing the monthly data for analysis...")
+    monthly_data = monthly_data[['1. open', '2. high', '3. low', '4. close', '5. volume']]
+    monthly_data.columns = ['open', 'high', 'low', 'close', 'volume']
+    monthly_data = monthly_data.astype(float)
+    monthly_data = monthly_data.reset_index().rename(columns={'index': 'date'})
+    monthly_data = monthly_data.sort_values(by='date')
+    print("Monthly data preparation complete.")
+
+    print("Converting monthly data from USD to INR...")
+    monthly_data['open'] *= exchange_rate
+    monthly_data['high'] *= exchange_rate
+    monthly_data['low'] *= exchange_rate
+    monthly_data['close'] *= exchange_rate
+    print("Monthly conversion complete.")
+
+    # Fetch Daily Data
+    print("Fetching Bitcoin daily data in USD...")
+    daily_data, meta_data = cc.get_digital_currency_daily(symbol='BTC', market='USD')
+    print("Daily data fetched successfully.")
+
+    # Prepare Daily Data
+    print("Preparing the daily data for analysis...")
+    daily_data = daily_data[['1. open', '2. high', '3. low', '4. close', '5. volume']]
+    daily_data.columns = ['open', 'high', 'low', 'close', 'volume']
+    daily_data = daily_data.astype(float)
+    daily_data = daily_data.reset_index().rename(columns={'index': 'date'})
+    daily_data = daily_data.sort_values(by='date')
+    print("Daily data preparation complete.")
+
+    print("Converting daily data from USD to INR...")
+    daily_data['open'] *= exchange_rate
+    daily_data['high'] *= exchange_rate
+    daily_data['low'] *= exchange_rate
+    daily_data['close'] *= exchange_rate
+    print("Daily conversion complete.")
+
+    # Train Monthly Model with Ridge Regression
+    print("Setting up and training the monthly model with Ridge regression...")
+    X_monthly = monthly_data[['open', 'high', 'low', 'volume']]
+    y_monthly = monthly_data['close']
+    X_train_monthly, X_test_monthly, y_train_monthly, y_test_monthly = train_test_split(X_monthly, y_monthly, test_size=0.2, shuffle=False)
+    model_monthly = Ridge(alpha=1.0)
+    model_monthly.fit(X_train_monthly, y_train_monthly)
+    print("Monthly Ridge model training complete.")
+
+    print("Testing the Ridge model's accuracy...")
+    score_monthly = model_monthly.score(X_test_monthly, y_test_monthly)
+    print(f"Monthly Model Accuracy: {score_monthly * 100:.2f}%")
+
+    # Perform Cross-Validation for Monthly Model
+    print("Performing cross-validation for the monthly model...")
+    cv_scores_monthly = cross_val_score(model_monthly, X_monthly, y_monthly, cv=5)  # 5-fold cross-validation
+    print(f"Monthly Model Cross-validation scores: {cv_scores_monthly}")
+    print(f"Average Monthly Model Cross-validation score: {np.mean(cv_scores_monthly) * 100:.2f}%")
+
+    # Train Daily Model with Ridge Regression
+    print("Setting up and training the daily model with Ridge regression...")
+    X_daily = daily_data[['open', 'high', 'low', 'volume']]
+    y_daily = daily_data['close']
+    X_train_daily, X_test_daily, y_train_daily, y_test_daily = train_test_split(X_daily, y_daily, test_size=0.2, shuffle=False)
+    model_daily = Ridge(alpha=1.0)
+    model_daily.fit(X_train_daily, y_train_daily)
+    print("Daily Ridge model training complete.")
+
+    print("Testing the Ridge model's accuracy...")
+    score_daily = model_daily.score(X_test_daily, y_test_daily)
+    print(f"Daily Model Accuracy: {score_daily * 100:.2f}%")
+
+    # Perform Cross-Validation for Daily Model
+    print("Performing cross-validation for the daily model...")
+    cv_scores_daily = cross_val_score(model_daily, X_daily, y_daily, cv=5)  # 5-fold cross-validation
+    print(f"Daily Model Cross-validation scores: {cv_scores_daily}")
+    print(f"Average Daily Model Cross-validation score: {np.mean(cv_scores_daily) * 100:.2f}%")
+
+    # Forecast Next Month's Rate
+    print("Forecasting the next month's closing price...")
+    last_row_monthly = monthly_data.iloc[-1]
+    next_month_features = pd.DataFrame({
+        'open': [last_row_monthly['open']],
+        'high': [last_row_monthly['high']],
+        'low': [last_row_monthly['low']],
+        'volume': [last_row_monthly['volume']]
+    })
+    predicted_close_monthly = model_monthly.predict(next_month_features)
+    print(f"Predicted next month's closing price: ₹{predicted_close_monthly[0]:,.2f}")
+
+    # Forecast Next Day's Rate
+    print("Forecasting the next day's closing price...")
+    last_row_daily = daily_data.iloc[-1]
+    next_day_features = pd.DataFrame({
+        'open': [last_row_daily['open']],
+        'high': [last_row_daily['high']],
+        'low': [last_row_daily['low']],
+        'volume': [last_row_daily['volume']]
+    })
+    predicted_close_daily = model_daily.predict(next_day_features)
+    print(f"Predicted next day's closing price: ₹{predicted_close_daily[0]:,.2f}")
+
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+finally:
+    print("Execution completed.")
