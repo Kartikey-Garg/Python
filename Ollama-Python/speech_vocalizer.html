@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Vocalizer</title>
+    <style>
+        :root {
+            --bg-color-light: #f9f9f9;
+            --text-color-light: #333;
+            --button-bg-light: #007BFF;
+            --button-hover-bg-light: #0056b3;
+            --highlight-color-light: #ffeb3b;
+
+            --bg-color-dark: #121212;
+            --text-color-dark: #e0e0e0;
+            --button-bg-dark: #1e88e5;
+            --button-hover-bg-dark: #1565c0;
+            --highlight-color-dark: #ffeb3b;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+            background-color: var(--bg-color-light);
+            color: var(--text-color-light);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        h1 {
+            color: inherit;
+        }
+
+        button, select, input[type="range"] {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: var(--button-bg-light);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--button-hover-bg-light);
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: inherit;
+        }
+
+        #speechOutput {
+            margin-top: 20px;
+            font-size: 16px;
+            color: inherit;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+
+        .highlight {
+            background-color: var(--highlight-color-light);
+        }
+
+        .dark-mode {
+            background-color: var(--bg-color-dark);
+            color: var(--text-color-dark);
+        }
+
+        .dark-mode button, .dark-mode select, .dark-mode input[type="range"] {
+            background-color: var(--button-bg-dark);
+        }
+
+        .dark-mode button:hover {
+            background-color: var(--button-hover-bg-dark);
+        }
+
+        .dark-mode .highlight {
+            background-color: var(--highlight-color-dark);
+        }
+
+        #darkModeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--button-bg-light);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .dark-mode #darkModeToggle {
+            background-color: var(--button-bg-dark);
+        }
+    </style>
+</head>
+<body>
+    <button id="darkModeToggle">Enable Dark Mode</button>
+    <h1>Speech Vocalizer</h1>
+    <p>Click the button below to load and vocalize the generated speech.</p>
+    <p><strong>Note:</strong> Ensure this file is served over an HTTP server (e.g., Python's HTTP server) for proper functionality.</p>
+    <button id="loadSpeech">Load Speech</button>
+    <p id="status"></p>
+    <div id="speechOutput"></div>
+
+    <div id="controls" style="display: none;">
+        <label for="voiceSelect">Voice:</label>
+        <select id="voiceSelect"></select>
+
+        <label for="pitchRange">Pitch:</label>
+        <input id="pitchRange" type="range" min="0.5" max="2" step="0.1" value="1">
+        <span id="pitchValue">1</span>
+
+        <label for="rateRange">Rate:</label>
+        <input id="rateRange" type="range" min="0.5" max="2" step="0.1" value="1">
+        <span id="rateValue">1</span>
+    </div>
+
+    <button id="playSpeech" style="display: none;">Play Speech</button>
+    <button id="pauseSpeech" style="display: none;">Pause Speech</button>
+    <button id="stopSpeech" style="display: none;">Stop Speech</button>
+
+    <script>
+        let utterance;
+        let isPaused = false;
+        let voices = [];
+
+        // Stop any ongoing speech when the page is loaded or reloaded
+        window.onload = function () {
+            speechSynthesis.cancel();
+        };
+
+        // Load available voices
+        function loadVoices() {
+            voices = speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById("voiceSelect");
+            voiceSelect.innerHTML = voices
+                .map((voice, index) => `<option value="${index}">${voice.name} (${voice.lang})</option>`)
+                .join("");
+
+            // Automatically select the first voice if available
+            if (voices.length > 0) {
+                voiceSelect.value = 0;
+            }
+        }
+
+        // Ensure voices are loaded properly
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        } else {
+            // Fallback for browsers that don't trigger `onvoiceschanged`
+            setTimeout(loadVoices, 100);
+        }
+
+        // Update pitch and rate values
+        document.getElementById("pitchRange").addEventListener("input", function () {
+            document.getElementById("pitchValue").textContent = this.value;
+        });
+        document.getElementById("rateRange").addEventListener("input", function () {
+            document.getElementById("rateValue").textContent = this.value;
+        });
+
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById("darkModeToggle");
+        darkModeToggle.addEventListener("click", function () {
+            document.body.classList.toggle("dark-mode");
+            if (document.body.classList.contains("dark-mode")) {
+                darkModeToggle.textContent = "Disable Dark Mode";
+            } else {
+                darkModeToggle.textContent = "Enable Dark Mode";
+            }
+        });
+
+        document.getElementById("loadSpeech").addEventListener("click", function () {
+            const status = document.getElementById("status");
+            const speechOutput = document.getElementById("speechOutput");
+            const playSpeechButton = document.getElementById("playSpeech");
+            const pauseSpeechButton = document.getElementById("pauseSpeech");
+            const stopSpeechButton = document.getElementById("stopSpeech");
+            const controls = document.getElementById("controls");
+
+            status.textContent = "Loading speech text...";
+            speechOutput.textContent = "";
+            playSpeechButton.style.display = "none";
+            pauseSpeechButton.style.display = "none";
+            stopSpeechButton.style.display = "none";
+            controls.style.display = "none";
+
+            // Fetch the generated speech text from the file
+            fetch("generated_speech.txt")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Failed to load speech text. Ensure the file exists and is accessible.");
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    status.textContent = "Speech loaded successfully.";
+                    speechOutput.textContent = text;
+                    playSpeechButton.style.display = "inline-block";
+                    controls.style.display = "block";
+
+                    // Attach the speech text to the play button
+                    playSpeechButton.onclick = function () {
+                        if (isPaused) {
+                            speechSynthesis.resume();
+                            isPaused = false;
+                            status.textContent = "Speech resumed.";
+                            return;
+                        }
+
+                        utterance = new SpeechSynthesisUtterance(text);
+                        const selectedVoiceIndex = document.getElementById("voiceSelect").value;
+                        utterance.voice = voices[selectedVoiceIndex];
+                        utterance.pitch = parseFloat(document.getElementById("pitchRange").value);
+                        utterance.rate = parseFloat(document.getElementById("rateRange").value);
+
+                        const words = text.split(" ");
+                        let wordIndex = 0;
+
+                        // Highlight the word being spoken
+                        utterance.onboundary = (event) => {
+                            if (event.name === "word") {
+                                const highlightedText = words
+                                    .map((word, index) =>
+                                        index === wordIndex ? `<span class="highlight">${word}</span>` : word
+                                    )
+                                    .join(" ");
+                                speechOutput.innerHTML = highlightedText;
+                                wordIndex++;
+                            }
+                        };
+
+                        utterance.onend = () => {
+                            status.textContent = "Speech playback completed.";
+                            playSpeechButton.style.display = "inline-block";
+                            pauseSpeechButton.style.display = "none";
+                            stopSpeechButton.style.display = "none";
+                        };
+
+                        utterance.onerror = () => {
+                            status.textContent = "An error occurred during speech playback.";
+                        };
+
+                        speechSynthesis.speak(utterance);
+                        status.textContent = "Speech is playing...";
+                        pauseSpeechButton.style.display = "inline-block";
+                        stopSpeechButton.style.display = "inline-block";
+                    };
+
+                    // Pause speech
+                    pauseSpeechButton.onclick = function () {
+                        if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                            speechSynthesis.pause();
+                            isPaused = true;
+                            status.textContent = "Speech paused.";
+                        }
+                    };
+
+                    // Stop speech
+                    stopSpeechButton.onclick = function () {
+                        if (speechSynthesis.speaking) {
+                            speechSynthesis.cancel();
+                            status.textContent = "Speech stopped.";
+                            speechOutput.innerHTML = text; // Reset text without highlights
+                            playSpeechButton.style.display = "inline-block";
+                            pauseSpeechButton.style.display = "none";
+                            stopSpeechButton.style.display = "none";
+                        }
+                    };
+                })
+                .catch(error => {
+                    status.textContent = error.message;
+                });
+        });
+
+        // Load voices when the page loads
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    </script>
+</body>
+</html>
