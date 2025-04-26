@@ -58,8 +58,8 @@ if __name__ == "__main__":
     speech_text = generate_speech(topic)
 
     if speech_text:
-        # Save the speech to a file
-        output_file = "generated_speech.txt"
+        # Save the speech to a file in the Text Generator directory
+        output_file = "./Text Generator/generated_speech.txt"
         try:
             print("[Checkpoint] Saving speech to file...")
             with open(output_file, "w") as file:

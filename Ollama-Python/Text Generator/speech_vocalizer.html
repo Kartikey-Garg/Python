@@ -107,7 +107,11 @@
     <h1>Speech Vocalizer</h1>
     <p>Click the button below to load and vocalize the generated speech.</p>
     <p><strong>Note:</strong> Ensure this file is served over an HTTP server (e.g., Python's HTTP server) for proper functionality.</p>
-    <button id="loadSpeech">Load Speech</button>
+    <form id="topicForm">
+        <label for="topicInput">Enter Topic:</label>
+        <input type="text" id="topicInput" placeholder="Enter a topic" required>
+        <button type="submit">Generate Speech</button>
+    </form>
     <p id="status"></p>
     <div id="speechOutput"></div>
 
@@ -179,7 +183,9 @@
             }
         });
 
-        document.getElementById("loadSpeech").addEventListener("click", function () {
+        document.getElementById("topicForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const topic = document.getElementById("topicInput").value;
             const status = document.getElementById("status");
             const speechOutput = document.getElementById("speechOutput");
             const playSpeechButton = document.getElementById("playSpeech");
@@ -187,23 +193,28 @@
             const stopSpeechButton = document.getElementById("stopSpeech");
             const controls = document.getElementById("controls");
 
-            status.textContent = "Loading speech text...";
+            status.textContent = "Generating speech...";
             speechOutput.textContent = "";
             playSpeechButton.style.display = "none";
             pauseSpeechButton.style.display = "none";
             stopSpeechButton.style.display = "none";
             controls.style.display = "none";
 
-            // Fetch the generated speech text from the file
-            fetch("generated_speech.txt")
+            // Send the topic to the backend and fetch the generated speech
+            fetch("http://localhost:8000/generate_speech", {  // Ensure the URL matches the Flask server
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ topic }),
+            })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error("Failed to load speech text. Ensure the file exists and is accessible.");
+                        throw new Error("Failed to generate speech. Please try again.");
                     }
-                    return response.text();
+                    return response.json();  // Parse JSON response
                 })
-                .then(text => {
-                    status.textContent = "Speech loaded successfully.";
+                .then(data => {
+                    const text = data.speech_text;  // Extract speech text from JSON
+                    status.textContent = "Speech generated successfully.";
                     speechOutput.textContent = text;
                     playSpeechButton.style.display = "inline-block";
                     controls.style.display = "block";
