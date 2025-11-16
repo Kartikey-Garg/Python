@@ -1,24 +1,38 @@
-# 1. Name your workflow
-name: My First Cloud Workflow
+name: Run My Selenium Script
 
-# 2. Tell it WHEN to run
+# Triggers the workflow on push to 'master' or manually
 on:
   push:
-    branches: [ "master" ] # Runs every time you push to the 'main' branch
+    branches: [ "master" ]
   workflow_dispatch:
-# 3. List the jobs to do
+
 jobs:
-  # 4. Define your first job
-  hello-world-job:
-    # 5. Pick your FREE cloud VM (this is the magic part)
+  run-my-script:
+    # Use the free Ubuntu VM
     runs-on: ubuntu-latest
 
-    # 6. List the steps for this job
     steps:
-      # 7. A step to just print "Hello World"
-      - name: Say Hello
-        run: echo "Hello World! I am running on a GitHub VM!"
-      
-      # 8. Another step to show where we are
-      - name: Show file location
-        run: pwd
+      # 1. Checks out your repository's code
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 2. Sets up Python
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. Installs the browser and virtual screen (xvfb)
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
+          
+      # 4. Installs your script's Python libraries
+      - name: Install Python dependencies
+        run: pip install selenium webdriver-manager
+        
+      # 5. Runs your script inside the virtual screen
+      # The 'xvfb-run' command is the key to making Selenium work
+      - name: Run Python Script
+        run: xvfb-run python Python-Selenium/Google_Search.py
