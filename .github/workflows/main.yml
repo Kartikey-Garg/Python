@@ -5,7 +5,7 @@ name: My First Cloud Workflow
 on:
   push:
     branches: [ "master" ] # Runs every time you push to the 'main' branch
-
+  workflow_dispatch:
 # 3. List the jobs to do
 jobs:
   # 4. Define your first job
