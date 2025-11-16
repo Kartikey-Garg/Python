@@ -16,7 +16,7 @@ driver = webdriver.Chrome(service=service)
 driver.get("https://www.google.co.in")
 
 # Find the search input field using the updated method
-box = driver.find_element(By.XPATH, "//*/form/div[1]/div[1]/div[1]/div/div[2]/input")
+box = driver.find_element(By.XPATH, "//*[@id='input']")
 print("The input Element is: ", box)
 
 # Enter a query and submit the form
