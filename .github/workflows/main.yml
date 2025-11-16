@@ -1,0 +1,24 @@
+# 1. Name your workflow
+name: My First Cloud Workflow
+
+# 2. Tell it WHEN to run
+on:
+  push:
+    branches: [ "main" ] # Runs every time you push to the 'main' branch
+
+# 3. List the jobs to do
+jobs:
+  # 4. Define your first job
+  hello-world-job:
+    # 5. Pick your FREE cloud VM (this is the magic part)
+    runs-on: ubuntu-latest
+
+    # 6. List the steps for this job
+    steps:
+      # 7. A step to just print "Hello World"
+      - name: Say Hello
+        run: echo "Hello World! I am running on a GitHub VM!"
+      
+      # 8. Another step to show where we are
+      - name: Show file location
+        run: pwd
