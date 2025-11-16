@@ -5,8 +5,9 @@ from selenium.webdriver.chrome.service import Service
 import time
 
 # Set the path to the ChromeDriver executable using the Service class
-service = Service("/Users/kartikeygarg/Downloads/chromedriver-mac-arm64/chromedriver")  # Update with the correct path to chromedriver
-
+#service = Service("/Users/kartikeygarg/Downloads/chromedriver-mac-arm64/chromedriver")  # Update with the correct path to chromedriver
+# For Github Build
+service = Service(ChromeDriverManager().install())
 # Initialize the WebDriver (ChromeDriver in this case)
 driver = webdriver.Chrome(service=service)
 
