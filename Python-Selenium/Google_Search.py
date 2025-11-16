@@ -16,15 +16,15 @@ driver = webdriver.Chrome(service=service)
 driver.get("https://www.google.co.in")
 
 # Find the search input field using the updated method
-box = driver.find_element(By.XPATH, "//*[@id='input']")
-print("The input Element is: ", box)
+#box = driver.find_element(By.XPATH, "//*[@id='input']")
+#print("The input Element is: ", box)
 
 # Enter a query and submit the form
-box.send_keys("Send")
-box.send_keys(Keys.RETURN)
+#box.send_keys("Send")
+#box.send_keys(Keys.RETURN)
 
 # Wait for the results page to load
-time.sleep(5)
+#time.sleep(5)
 
 # Close the browser
 driver.close()
